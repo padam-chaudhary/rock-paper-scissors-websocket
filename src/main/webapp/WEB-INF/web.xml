@@ -1,0 +1,4 @@
+<web-app>
+    <!-- WebSocket configuration is handled automatically by @ServerEndpoint annotation -->
+    <!-- No additional servlet configuration needed for WebSocket endpoints -->
+</web-app>

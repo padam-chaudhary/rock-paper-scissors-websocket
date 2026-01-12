@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Player 1 - Rock Paper Scissors</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1d2671, #c33764);
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            margin-top: 50px;
+            padding: 20px;
+        }
+        button {
+            padding: 15px 25px;
+            margin: 10px;
+            font-size: 18px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        #status {
+            margin: 20px;
+            font-size: 18px;
+        }
+        #result {
+            font-size: 22px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <h1>Player 1</h1>
+    <div id="status">Connecting...</div>
+
+    <div id="game" style="display:none;">
+        <h3>Choose one</h3>
+        <button onclick="sendChoice('Rock')">Rock</button>
+        <button onclick="sendChoice('Paper')">Paper</button>
+        <button onclick="sendChoice('Scissors')">Scissors</button>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<div id="scoreboard">
+    <h3>Round: <span id="round">1</span> / 3</h3>
+    <p>Player 1 Score: <span id="scoreP1">0</span></p>
+    <p>Player 2 Score: <span id="scoreP2">0</span></p>
+</div>
+
+<script>
+    let ws;
+    let myRole = "";
+
+    function connect() {
+        const protocol = location.protocol === "https:" ? "wss://" : "ws://";
+        ws = new WebSocket(protocol + location.host + "/RockPaperScissors/game");
+
+        ws.onopen = () => {
+            document.getElementById("status").innerText = "Connected. Waiting for player 2...";
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "start") {
+                document.getElementById("round").innerText = data.round;
+                document.getElementById("scoreP1").innerText = data.scoreP1;
+                document.getElementById("scoreP2").innerText = data.scoreP2;
+                document.getElementById("game").style.display = "block";
+            }
+
+            if (data.type === "round_result") {
+                document.getElementById("round").innerText = data.round;
+                document.getElementById("scoreP1").innerText = data.scoreP1;
+                document.getElementById("scoreP2").innerText = data.scoreP2;
+
+                document.getElementById("result").innerHTML =
+                    `Round ${data.round} Result<br>
+                     You: ${myRole === 'player1' ? data.p1 : data.p2}<br>
+                     Opponent: ${myRole === 'player1' ? data.p2 : data.p1}<br>
+                     <b>${data.result}</b>`;
+            }
+
+            if (data.type === "next_round") {
+                document.getElementById("round").innerText = data.round;
+                document.getElementById("game").style.display = "block";
+            }
+
+            if (data.type === "game_over") {
+                document.getElementById("game").style.display = "none";
+                document.getElementById("result").innerHTML =
+                    `<h2>${data.final}</h2>
+                     <p>Final Score</p>
+                     Player 1: ${data.scoreP1}<br>
+                     Player 2: ${data.scoreP2}<br><br>
+                     <button onclick="location.reload()">Play Again</button>`;
+            }
+
+        };
+
+        ws.onerror = () => {
+            document.getElementById("status").innerText = "WebSocket error!";
+        };
+    }
+
+    function sendChoice(choice) {
+        ws.send(JSON.stringify({ choice: choice }));
+        document.getElementById("status").innerText = "Choice submitted. Waiting...";
+        document.getElementById("game").style.display = "none";
+    }
+
+    connect();
+</script>
+</body>
+</html>
